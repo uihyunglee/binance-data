@@ -1,0 +1,6 @@
+*.json
+*.ipynb
+*.cmd
+.ipynb_checkpoints
+__pycache__
+.idea

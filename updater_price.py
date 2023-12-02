@@ -21,3 +21,10 @@ class PriceUpdater:
         all_tickers = list(map(lambda x: x['symbol'], all_ticker_dict))
         usdt_tickers = [ticker for ticker in all_tickers if ticker.endswith('USDT')]
         return usdt_tickers
+
+    def get_future_tickers(self):
+        future_ticker_dict = self.client.futures_symbol_ticker()
+        future_tickers = list(map(lambda x: x['symbol'], future_ticker_dict))
+        usdt_future_tickers = [ticker for ticker in future_tickers if 'USDT' in ticker]
+        usdt_future_tickers
+        return usdt_future_tickers

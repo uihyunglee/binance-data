@@ -23,17 +23,20 @@ class PriceUpdater:
         self.is_daily_form = True if VALID_INTERVALS.index(interval) >= DB_FORM_CHANGE_LEVEL else False
 
         config_path = os.path.join(os.getcwd(), "config.json")
-        if not os.path.exists(config_path):
+        if os.path.exists(config_path):
+            with open('config.json', 'r') as json_file:
+                _config = json.load(json_file)
+            if 'db' in _config:
+                db_info = _config['db']
+                required_keys = ["host", "port", "user", "password", "dbname"]
+                if all(key in db_info for key in required_keys):
+                    self.conn = psycopg2.connect(**db_info)
+                else:
+                    raise ValueError("db_info must contain host, port, user, password, and dbname.")
+            else:
+                raise ValueError("config.json must contain 'db' key.")
+        else:
             raise FileNotFoundError("config.json must exist in the path. ")
-        with open('config.json', 'r') as json_file:
-            _config = json.load(json_file)
-        if 'db' not in _config:
-            raise ValueError("config.json must contain 'db' key.")
-        db_info = _config['db']
-        required_keys = ["host", "port", "user", "password", "dbname"]
-        if not all(key in db_info for key in required_keys):
-            raise ValueError("db_info must contain host, port, user, password, and dbname.")
-        self.conn = psycopg2.connect(**db_info)
 
         self.client = Client("", "")
         self.symbols = symbols

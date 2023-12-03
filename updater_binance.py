@@ -71,15 +71,15 @@ class PriceUpdater:
         self.conn.commit()
 
     def get_spot_symbols(self):
-        all_symbol_dict = self.client.get_all_tickers()
-        all_symbols = list(map(lambda x: x['symbol'], all_symbol_dict))
-        usdt_symbols = [symbol for symbol in all_symbols if symbol.endswith('USDT')]
-        return usdt_symbols
+        spot_symbol_dict = self.client.get_all_tickers()
+        spot_symbols = list(map(lambda x: x['symbol'], spot_symbol_dict))
+        usdt_spot_symbols = [spot_symbol for spot_symbol in spot_symbols if spot_symbol.endswith('USDT')]
+        return usdt_spot_symbols
 
     def get_future_symbols(self):
         future_symbol_dict = self.client.futures_symbol_ticker()
         future_symbols = list(map(lambda x: x['symbol'], future_symbol_dict))
-        usdt_future_symbols = [symbol for symbol in future_symbols if 'USDT' in symbol]
+        usdt_future_symbols = [future_symbol for future_symbol in future_symbols if 'USDT' in future_symbol]
         return usdt_future_symbols
 
     def get_data(self, symbol, interval, start_date, end_date, future):

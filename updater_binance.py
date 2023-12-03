@@ -167,3 +167,23 @@ class PriceUpdater:
                 self.conn.commit()
 
                 print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...OK')
+
+
+if __name__ == '__main__':
+    pu = PriceUpdater()
+    target_intervals = VALID_INTERVALS
+    # target_spot_symbols = pu.get_get_spot_tickers()
+    # target_future_symbols = pu.get_get_future__tickers()
+    target_spot_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT']
+    target_future_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT']
+
+    for interval in target_intervals:
+        print(f'--- interval {interval} Update ---')
+
+        print(f'Spot:')
+        pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False)
+        pus.update_price_data()
+
+        print(f'Future:')
+        puf = PriceUpdater(interval=interval, symbols=target_future_symbols, future=True)
+        puf.update_price_data()

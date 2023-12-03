@@ -137,8 +137,16 @@ class PriceUpdater:
         for cnt, symbol in enumerate(self.symbols, start=1):
             print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info Download...', end='\r')
             start_date = self.get_start_date(symbol)
-
             kline_df = self.get_data(symbol, self.interval, start_date, end_date, self.future)
+
+            if start_date >= end_date:
+                print(f'{symbol} has already been updated today. Update the next symbol.')
+                continue
+
+            if (len(kline_df) == 0) or (pd.to_datetime(end_date) > kline_df.closetime.max()):
+                print(f'{symbol} data is not yet closed. Update the next symbol.')
+                continue
+
             kline_df.drop(columns=['closetime', 'ignore'], inplace=True)
             kline_df['symbol'] = symbol
             kline_df['dateint'] = kline_df['cddt'].dt.strftime('%Y%m%d').astype(int)

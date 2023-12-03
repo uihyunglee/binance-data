@@ -68,15 +68,14 @@ class PriceUpdater:
             curs.execute(sql)
         self.conn.commit()
 
-    def get_spot_tickers(self):
-        all_ticker_dict = self.client.get_all_tickers()
-        all_tickers = list(map(lambda x: x['symbol'], all_ticker_dict))
-        usdt_tickers = [ticker for ticker in all_tickers if ticker.endswith('USDT')]
-        return usdt_tickers
+    def get_spot_symbols(self):
+        all_symbol_dict = self.client.get_all_tickers()
+        all_symbols = list(map(lambda x: x['symbol'], all_symbol_dict))
+        usdt_symbols = [symbol for symbol in all_symbols if symbol.endswith('USDT')]
+        return usdt_symbols
 
-    def get_future_tickers(self):
-        future_ticker_dict = self.client.futures_symbol_ticker()
-        future_tickers = list(map(lambda x: x['symbol'], future_ticker_dict))
-        usdt_future_tickers = [ticker for ticker in future_tickers if 'USDT' in ticker]
-        usdt_future_tickers
-        return usdt_future_tickers
+    def get_future_symbols(self):
+        future_symbol_dict = self.client.futures_symbol_ticker()
+        future_symbols = list(map(lambda x: x['symbol'], future_symbol_dict))
+        usdt_future_symbols = [symbol for symbol in future_symbols if 'USDT' in symbol]
+        return usdt_future_symbols

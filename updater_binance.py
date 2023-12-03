@@ -3,7 +3,6 @@ from datetime import timedelta as td
 import json
 import re
 import os
-import sys
 
 import numpy as np
 import pandas as pd
@@ -82,3 +81,26 @@ class PriceUpdater:
         future_symbols = list(map(lambda x: x['symbol'], future_symbol_dict))
         usdt_future_symbols = [symbol for symbol in future_symbols if 'USDT' in symbol]
         return usdt_future_symbols
+
+    def get_data(self, symbol, interval, start_date, end_date, future):
+        start_date = int(dt.strptime(start_date, "%Y-%m-%d %H:%M:%S").timestamp() * 1000)
+        end_date = int(dt.strptime(end_date, "%Y-%m-%d %H:%M:%S").timestamp() * 1000)
+
+        if future:
+            kline = self.client.futures_historical_klines(symbol=symbol, interval=interval, start_str=start_date,
+                                                          end_str=end_date)
+        else:
+            kline = self.client.get_historical_klines(symbol=symbol, interval=interval, start_str=start_date,
+                                                      end_str=end_date)
+
+        init_col = ['cddt', 'open', 'high', 'low', 'close', 'vol', 'closetime', 'trd_val',
+                    'trd_num', 'taker_buy_vol', 'taker_buy_trd_val', 'ignore']
+        kline_df = pd.DataFrame(columns=init_col, data=kline)
+        str2float_col = ['open', 'high', 'low', 'close', 'vol', 'trd_val', 'taker_buy_vol', 'taker_buy_trd_val']
+        str2int_col = ['trd_num', 'ignore']
+        int2time_col = ['cddt', 'closetime']
+
+        kline_df[str2float_col] = kline_df[str2float_col].astype(np.float64)
+        kline_df[str2int_col] = kline_df[str2int_col].astype(np.int64)
+        kline_df[int2time_col] = kline_df[int2time_col].apply(lambda s: pd.to_datetime(s, unit='ms') + td(hours=9))
+        return kline_df

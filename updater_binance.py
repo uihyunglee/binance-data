@@ -121,3 +121,42 @@ class PriceUpdater:
                 start_date = pd.to_datetime(start_date) + td(days=1)
                 start_date = start_date.strftime('%Y-%m-%d')
         return start_date + ' 09:00:00'
+
+    def update_price_data(self):
+        symbol_cnt = len(self.symbols)
+        end_date = dt.now().strftime('%Y-%m-%d 08:59:59')
+
+        daily_start_col = ['dateint', 'symbol']
+        intraday_start_col = ['symbol', 'cddt', 'dateint', 'hhmmint']
+        start_col = daily_start_col if self.is_daily_form else intraday_start_col
+        remain_col = ['open', 'high', 'low', 'close', 'vol', 'trd_val', 'trd_num', 'taker_buy_vol', 'taker_buy_trd_val']
+        col = start_col + remain_col
+
+        print(f'Total Symbol Count: {symbol_cnt}')
+        print(self.symbols)
+
+        for cnt, symbol in enumerate(self.symbols, start=1):
+            print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info Download...', end='\r')
+            start_date = self.get_start_date(symbol)
+
+            kline_df = self.get_data(symbol, self.interval, start_date, end_date, self.future)
+            kline_df.drop(columns=['closetime', 'ignore'], inplace=True)
+            kline_df['symbol'] = symbol
+            kline_df['dateint'] = kline_df['cddt'].dt.strftime('%Y%m%d').astype(int)
+            kline_df['hhmmint'] = kline_df['cddt'].dt.strftime('%H%M').astype(int)
+            kline_df['cddt'] = kline_df['cddt'].astype(str)
+            kline_df = kline_df[col]
+            print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...', end='\r')
+            with self.conn.cursor() as curs:
+                t_now = dt.now()
+                for _, row in kline_df.iterrows():
+                    update_values = str(row.to_list())[1:-1] + f", '{t_now}'"
+                    sql = f"""
+                    INSERT INTO {self.table_name}
+                    VALUES ({update_values})
+                    ;
+                    """
+                    curs.execute(sql)
+                self.conn.commit()
+
+                print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...OK')

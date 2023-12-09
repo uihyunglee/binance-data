@@ -104,22 +104,24 @@ class PriceUpdater:
         kline_df['cddt'] = pd.to_datetime(kline_df['opentime'], unit='ms') + td(hours=9)
         return kline_df
 
-    def get_start_date(self, symbol):
+    def get_start_time(self, symbol):
         with self.conn.cursor() as curs:
             sql = f"""
-            SELECT MAX(dateint) FROM {self.table_name}
+            SELECT MAX(opentime) FROM {self.table_name}
             WHERE symbol = '{symbol}'
             ;
             """
             curs.execute(sql)
             rs = curs.fetchone()
-
-            start_date = str(rs[0]) if rs[0] is not None else self.init_start_date
-            start_date = f'{start_date[:4]}-{start_date[4:6]}-{start_date[6:]}'
-            if self.is_daily_form:
-                start_date = pd.to_datetime(start_date) + td(days=1)
-                start_date = start_date.strftime('%Y-%m-%d')
-        return start_date + ' 09:00:00'
+            if rs[0] is not None:
+                start_time = rs[0] + 1000
+                start_time = pd.to_datetime(start_time, unit='ms') + td(hours=9)
+                start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
+                return start_time
+            else:
+                start_time = self.init_start_date
+                start_time = f'{start_time[:4]}-{start_time[4:6]}-{start_time[6:]} 00:00:00'
+                return start_time
 
     def update_price_data(self):
         symbol_cnt = len(self.symbols)

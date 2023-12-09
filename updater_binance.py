@@ -9,7 +9,7 @@ import pandas as pd
 import psycopg2
 from binance.client import Client
 
-VALID_INTERVALS = ['1m', '3m', '5m', '30m', '1h', '2h', '4h', '6h', '8h', '1d', '1w', '1M']
+VALID_INTERVALS = ['1m', '3m', '5m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '1w']
 DB_FORM_CHANGE_LEVEL = VALID_INTERVALS.index('1d')  # intraday form -> daily form
 
 

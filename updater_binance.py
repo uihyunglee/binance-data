@@ -176,12 +176,13 @@ if __name__ == '__main__':
     target_future_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT']
 
     for interval in target_intervals:
-        print(f'--- interval {interval} Update ---')
 
-        print(f'Spot:')
-        pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False)
+        print(f'----- Spot {interval} Update -----')
+        pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20230101')
         pus.update_price_data()
+        print()
 
-        print(f'Future:')
-        puf = PriceUpdater(interval=interval, symbols=target_future_symbols, future=True)
+        print(f'----- Future {interval} Update -----')
+        puf = PriceUpdater(interval=interval, symbols=target_future_symbols, future=True, init_start_date='20230101')
         puf.update_price_data()
+        print()

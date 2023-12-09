@@ -53,6 +53,7 @@ class PriceUpdater:
             sql = f"""
             CREATE TABLE IF NOT EXISTS {self.table_name} (
                 {start_field},
+                opentime BIGINT,
                 open FLOAT,
                 high FLOAT,
                 low FLOAT,
@@ -92,16 +93,15 @@ class PriceUpdater:
             kline = self.client.get_historical_klines(symbol=symbol, interval=interval, start_str=start_date,
                                                       end_str=end_date)
 
-        init_col = ['cddt', 'open', 'high', 'low', 'close', 'vol', 'closetime', 'trd_val',
+        init_col = ['opentime', 'open', 'high', 'low', 'close', 'vol', 'closetime', 'trd_val',
                     'trd_num', 'taker_buy_vol', 'taker_buy_trd_val', 'ignore']
         kline_df = pd.DataFrame(columns=init_col, data=kline)
         str2float_col = ['open', 'high', 'low', 'close', 'vol', 'trd_val', 'taker_buy_vol', 'taker_buy_trd_val']
         str2int_col = ['trd_num', 'ignore']
-        int2time_col = ['cddt', 'closetime']
 
         kline_df[str2float_col] = kline_df[str2float_col].astype(np.float64)
         kline_df[str2int_col] = kline_df[str2int_col].astype(np.int64)
-        kline_df[int2time_col] = kline_df[int2time_col].apply(lambda s: pd.to_datetime(s, unit='ms') + td(hours=9))
+        kline_df['cddt'] = pd.to_datetime(kline_df['opentime'], unit='ms') + td(hours=9)
         return kline_df
 
     def get_start_date(self, symbol):
@@ -123,12 +123,12 @@ class PriceUpdater:
 
     def update_price_data(self):
         symbol_cnt = len(self.symbols)
-        end_date = dt.now().strftime('%Y-%m-%d 08:59:59')
+        end_date = dt.now().strftime('%Y-%m-%d %H:%M:%S')
 
         daily_start_col = ['dateint', 'symbol']
         intraday_start_col = ['symbol', 'cddt', 'dateint', 'hhmmint']
         start_col = daily_start_col if self.is_daily_form else intraday_start_col
-        remain_col = ['open', 'high', 'low', 'close', 'vol', 'trd_val', 'trd_num', 'taker_buy_vol', 'taker_buy_trd_val']
+        remain_col = ['opentime', 'open', 'high', 'low', 'close', 'vol', 'trd_val', 'trd_num', 'taker_buy_vol', 'taker_buy_trd_val']
         col = start_col + remain_col
 
         print(f'Total Symbol Count: {symbol_cnt}')
@@ -136,15 +136,11 @@ class PriceUpdater:
 
         for cnt, symbol in enumerate(self.symbols, start=1):
             print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info Download...', end='\r')
-            start_date = self.get_start_date(symbol)
-            kline_df = self.get_data(symbol, self.interval, start_date, end_date, self.future)
+            start_date = self.get_start_time(symbol)
+            kline_df = self.get_data(symbol, self.interval, start_date, end_date, self.future).iloc[:-1,:]
 
-            if start_date >= end_date:
-                print(f'{symbol} has already been updated today. Update the next symbol.')
-                continue
-
-            if (len(kline_df) == 0) or (pd.to_datetime(end_date) > kline_df.closetime.max()):
-                print(f'{symbol} data is not yet closed. Update the next symbol.')
+            if len(kline_df) == 0:
+                print(f'{symbol} Have no data.')
                 continue
 
             kline_df.drop(columns=['closetime', 'ignore'], inplace=True)

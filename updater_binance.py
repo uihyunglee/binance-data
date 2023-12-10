@@ -8,6 +8,18 @@ import numpy as np
 import pandas as pd
 import psycopg2
 from binance.client import Client
+from sl4p import *
+
+log_cfg = {
+    "LOG": {
+        "console_level": "INFO",
+        "console_format": "simple",
+
+        "logfile_savedir": "logs",
+        "logfile_name": "LOG.binance_data"
+    }
+}
+log = sl4p.getLogger(__file__, cfg=log_cfg)
 
 VALID_INTERVALS = ['1m', '3m', '5m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '1w']
 DB_FORM_CHANGE_LEVEL = VALID_INTERVALS.index('1d')  # intraday form -> daily form
@@ -133,8 +145,8 @@ class PriceUpdater:
         remain_col = ['opentime', 'open', 'high', 'low', 'close', 'vol', 'trd_val', 'trd_num', 'taker_buy_vol', 'taker_buy_trd_val']
         col = start_col + remain_col
 
-        print(f'Total Symbol Count: {symbol_cnt}')
-        print(self.symbols)
+        log.info(f'Total Symbol Count: {symbol_cnt}')
+        log.info(self.symbols)
 
         for cnt, symbol in enumerate(self.symbols, start=1):
             print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info Download...', end='\r')
@@ -142,7 +154,7 @@ class PriceUpdater:
             kline_df = self.get_data(symbol, self.interval, start_date, end_date, self.future).iloc[:-1,:]
 
             if len(kline_df) == 0:
-                print(f'{symbol} Have no data.')
+                log.info(f'{symbol} Have no update data.')
                 continue
 
             kline_df.drop(columns=['closetime', 'ignore'], inplace=True)
@@ -164,7 +176,7 @@ class PriceUpdater:
                     curs.execute(sql)
                 self.conn.commit()
 
-                print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...OK')
+                log.info(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...OK')
 
 
 if __name__ == '__main__':
@@ -177,12 +189,12 @@ if __name__ == '__main__':
 
     for interval in target_intervals:
 
-        print(f'----- Spot {interval} Update -----')
+        log.info(f'----- Spot {interval} Update -----')
         pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20230101')
         pus.update_price_data()
         print()
 
-        print(f'----- Future {interval} Update -----')
+        log.info(f'----- Future {interval} Update -----')
         puf = PriceUpdater(interval=interval, symbols=target_future_symbols, future=True, init_start_date='20230101')
         puf.update_price_data()
         print()

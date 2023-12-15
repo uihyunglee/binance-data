@@ -1,6 +1,66 @@
+# AS-IS .gitignore
 *.json
 *.ipynb
 *.cmd
 .ipynb_checkpoints
 __pycache__
 .idea
+
+
+# Docker
+######################
+*.env
+
+## Docker Volumes
+!*/.docker_volumes/
+
+# PostgreSQL
+######################
+## PostgreSQL data directory
+*pgdata/
+
+# Redis
+######################
+## Redis data files
+*dump.rdb
+
+# Airflow
+######################
+## Airflow logs
+logs/
+dags/__pycache__/
+airflow.cfg
+
+# Python
+######################
+## Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc.so
+
+## Python virtual environments
+.venv
+venv/
+ENV/
+
+## Jupyter Notebook
+.ipynb_checkpoints
+
+# Logs and databases
+######################
+## It’s better to include this in your global gitignore
+*.log
+*.sql
+*.sqlite
+
+# OS generated files
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

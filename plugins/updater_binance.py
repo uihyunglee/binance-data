@@ -201,18 +201,17 @@ def start_collect(intervals: List[str], spot_symbols: List[str], future_symbols:
         >>> start_collect('5m', ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'], ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'])
         >>> start_collect('1h', ['BTCUSDT'],['BTCUSDT'])
     """
+    for interval in intervals:
 
-    target_interval = interval
-    target_spot_symbols = spot_symbols
-    target_future_symbols = future_symbols
+        log.info(f'----- Spot {interval} Update -----')
+        pus = PriceUpdater(interval=interval, symbols=spot_symbols, future=False, init_start_date='20231101')
+        pus.update_price_data()
+        print()
 
-    log.info(f'[start_collect func]----- Spot {target_interval} Update -----')
-    pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20231101')
-    pus.update_price_data()
-
-    log.info(f'[start_collect func]----- Future {target_interval} Update -----')
-    pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20231101')
-    pus.update_price_data()
+        log.info(f'----- Future {interval} Update -----')
+        puf = PriceUpdater(interval=interval, symbols=future_symbols, future=True, init_start_date='20231101')
+        puf.update_price_data()
+        print()
 
 
 if __name__ == '__main__':
@@ -223,14 +222,4 @@ if __name__ == '__main__':
     target_spot_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT']
     target_future_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT']
 
-    for interval in target_intervals:
-
-        log.info(f'----- Spot {interval} Update -----')
-        pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20231101')
-        pus.update_price_data()
-        print()
-
-        log.info(f'----- Future {interval} Update -----')
-        puf = PriceUpdater(interval=interval, symbols=target_future_symbols, future=True, init_start_date='20231101')
-        puf.update_price_data()
-        print()
+    start_collect(target_intervals, target_spot_symbols, target_future_symbols)

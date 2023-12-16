@@ -144,7 +144,8 @@ class PriceUpdater:
         daily_start_col = ['dateint', 'symbol']
         intraday_start_col = ['symbol', 'cddt', 'dateint', 'hhmmint']
         start_col = daily_start_col if self.is_daily_form else intraday_start_col
-        remain_col = ['opentime', 'open', 'high', 'low', 'close', 'vol', 'trd_val', 'trd_num', 'taker_buy_vol', 'taker_buy_trd_val']
+        remain_col = ['opentime', 'open', 'high', 'low', 'close', 'vol',
+                      'trd_val', 'trd_num', 'taker_buy_vol', 'taker_buy_trd_val']
         col = start_col + remain_col
 
         log.info(f'Total Symbol Count: {symbol_cnt}')
@@ -153,7 +154,7 @@ class PriceUpdater:
         for cnt, symbol in enumerate(self.symbols, start=1):
             print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info Download...', end='\r')
             start_date = self.get_start_time(symbol)
-            kline_df = self.get_data(symbol, self.interval, start_date, end_date, self.future).iloc[:-1,:]
+            kline_df = self.get_data(symbol, self.interval, start_date, end_date, self.future).iloc[:-1, :]
 
             if len(kline_df) == 0:
                 log.info(f'{symbol} Have no update data.')
@@ -181,7 +182,7 @@ class PriceUpdater:
                 log.info(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...OK')
 
 
-### Dags 연계를 위한 실행 함수 추가 ###
+# Dags 연계를 위한 실행 함수 추가
 def start_collect(intervals: List[str], spot_symbols: List[str], future_symbols: List[str]):
     """
     데이터 수집 시작 함수

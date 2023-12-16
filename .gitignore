@@ -7,9 +7,10 @@ __pycache__
 .idea
 
 
+
 # Docker
 ######################
-*.env
+.env
 
 ## Docker Volumes
 !*/.docker_volumes/

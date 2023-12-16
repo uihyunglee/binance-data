@@ -7,8 +7,12 @@ from datetime import timedelta as td
 import numpy as np
 import pandas as pd
 import psycopg2
-from binance.client import Client
 from sl4p import *
+
+
+
+def test_please():
+    print('plz...')
 
 log_cfg = {
     "LOG": {
@@ -21,7 +25,7 @@ log_cfg = {
 }
 log = sl4p.getLogger(__file__, cfg=log_cfg)
 
-VALID_INTERVALS = ['1m', '3m', '5m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '1w']
+VALID_INTERVALS = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '1w']
 DB_FORM_CHANGE_LEVEL = VALID_INTERVALS.index('1d')  # intraday form -> daily form
 
 
@@ -179,22 +183,57 @@ class PriceUpdater:
                 log.info(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...OK')
 
 
+### Dags 연계를 위한 실행 함수 추가 ###
+
+def start_collect(interval:str, spot_symbols:list, future_symbols:list):
+    """
+    데이터 수집 시작 함수
+
+    이 함수는 주어진 구간에 따라 데이터 수집을 시작합니다.
+    구간은 list가 아닌 str로 넣으세요.
+
+    Parameters:
+        interval (str): 수집을 원하는 구간
+        spot_symbols (list): 현물가 기준 수집을 원하는 코인(티커) 리스트
+        future_symbols (list): 선물가 기준 수집을 원하는 코인(티커) 리스트
+
+    Returns:
+        None
+
+    Example:
+        >>> start_collect('5m', ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'], ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'])
+        >>> start_collect('1h', ['BTCUSDT'],['BTCUSDT'])
+    """
+    
+    target_interval = interval
+    target_spot_symbols = spot_symbols
+    target_future_symbols = future_symbols
+
+    log.info(f'[start_collect func]----- Spot {target_interval} Update -----')
+    pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20231101')
+    pus.update_price_data()
+
+    log.info(f'[start_collect func]----- Future {target_interval} Update -----')
+    pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20231101')
+    pus.update_price_data()
+
+
 if __name__ == '__main__':
     pu = PriceUpdater()
     target_intervals = VALID_INTERVALS
     # target_spot_symbols = pu.get_get_spot_tickers()
     # target_future_symbols = pu.get_get_future__tickers()
-    target_spot_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT']
-    target_future_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT']
+    target_spot_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT']
+    target_future_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT']
 
     for interval in target_intervals:
 
         log.info(f'----- Spot {interval} Update -----')
-        pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20230101')
+        pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20231101')
         pus.update_price_data()
         print()
 
         log.info(f'----- Future {interval} Update -----')
-        puf = PriceUpdater(interval=interval, symbols=target_future_symbols, future=True, init_start_date='20230101')
+        puf = PriceUpdater(interval=interval, symbols=target_future_symbols, future=True, init_start_date='20231101')
         puf.update_price_data()
         print()

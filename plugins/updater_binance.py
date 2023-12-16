@@ -182,7 +182,7 @@ class PriceUpdater:
 
 ### Dags 연계를 위한 실행 함수 추가 ###
 
-def start_collect(interval: List[str], spot_symbols: List[str], future_symbols: List[str]):
+def start_collect(intervals: List[str], spot_symbols: List[str], future_symbols: List[str]):
     """
     데이터 수집 시작 함수
 
@@ -201,7 +201,7 @@ def start_collect(interval: List[str], spot_symbols: List[str], future_symbols: 
         >>> start_collect('5m', ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'], ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'])
         >>> start_collect('1h', ['BTCUSDT'],['BTCUSDT'])
     """
-    
+
     target_interval = interval
     target_spot_symbols = spot_symbols
     target_future_symbols = future_symbols

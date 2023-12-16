@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from typing import List
 from datetime import datetime as dt
 from datetime import timedelta as td
 
@@ -181,7 +182,7 @@ class PriceUpdater:
 
 ### Dags 연계를 위한 실행 함수 추가 ###
 
-def start_collect(interval:str, spot_symbols:list, future_symbols:list):
+def start_collect(interval: List[str], spot_symbols: List[str], future_symbols: List[str]):
     """
     데이터 수집 시작 함수
 

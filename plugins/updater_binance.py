@@ -8,6 +8,7 @@ from datetime import timedelta as td
 import numpy as np
 import pandas as pd
 import psycopg2
+from binance.client import Client
 from sl4p import *
 
 

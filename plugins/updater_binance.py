@@ -1,18 +1,16 @@
 import json
 import os
 import re
+from typing import List
 from datetime import datetime as dt
 from datetime import timedelta as td
 
 import numpy as np
 import pandas as pd
 import psycopg2
+from binance.client import Client
 from sl4p import *
 
-
-
-def test_please():
-    print('plz...')
 
 log_cfg = {
     "LOG": {
@@ -146,7 +144,8 @@ class PriceUpdater:
         daily_start_col = ['dateint', 'symbol']
         intraday_start_col = ['symbol', 'cddt', 'dateint', 'hhmmint']
         start_col = daily_start_col if self.is_daily_form else intraday_start_col
-        remain_col = ['opentime', 'open', 'high', 'low', 'close', 'vol', 'trd_val', 'trd_num', 'taker_buy_vol', 'taker_buy_trd_val']
+        remain_col = ['opentime', 'open', 'high', 'low', 'close', 'vol',
+                      'trd_val', 'trd_num', 'taker_buy_vol', 'taker_buy_trd_val']
         col = start_col + remain_col
 
         log.info(f'Total Symbol Count: {symbol_cnt}')
@@ -155,7 +154,7 @@ class PriceUpdater:
         for cnt, symbol in enumerate(self.symbols, start=1):
             print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info Download...', end='\r')
             start_date = self.get_start_time(symbol)
-            kline_df = self.get_data(symbol, self.interval, start_date, end_date, self.future).iloc[:-1,:]
+            kline_df = self.get_data(symbol, self.interval, start_date, end_date, self.future).iloc[:-1, :]
 
             if len(kline_df) == 0:
                 log.info(f'{symbol} Have no update data.')
@@ -183,39 +182,35 @@ class PriceUpdater:
                 log.info(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...OK')
 
 
-### Dags 연계를 위한 실행 함수 추가 ###
-
-def start_collect(interval:str, spot_symbols:list, future_symbols:list):
+# Dags 연계를 위한 실행 함수 추가
+def start_collect(intervals: List[str], spot_symbols: List[str], future_symbols: List[str]):
     """
     데이터 수집 시작 함수
 
-    이 함수는 주어진 구간에 따라 데이터 수집을 시작합니다.
-    구간은 list가 아닌 str로 넣으세요.
+    이 함수는 주어진 시간 간격과 symbol에 따라 데이터 수집을 시작합니다.
 
     Parameters:
-        interval (str): 수집을 원하는 구간
-        spot_symbols (list): 현물가 기준 수집을 원하는 코인(티커) 리스트
-        future_symbols (list): 선물가 기준 수집을 원하는 코인(티커) 리스트
+        intervals (List[str]): 수집을 원하는 시간 간격
+        spot_symbols (List[str]): 현물 기준 수집을 원하는 코인(symbol) 리스트
+        future_symbols (List[str]): 선물 기준 수집을 원하는 코인(symbol) 리스트
 
     Returns:
         None
 
-    Example:
-        >>> start_collect('5m', ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'], ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'])
-        >>> start_collect('1h', ['BTCUSDT'],['BTCUSDT'])
+    Examples:
+        >>> start_collect(['5m', '15m', '1h'], ['BTCUSDT', 'ETHUSDT', 'XRPUSDT'], ['BTCUSDT', 'ETHUSDT'])
     """
-    
-    target_interval = interval
-    target_spot_symbols = spot_symbols
-    target_future_symbols = future_symbols
+    for interval in intervals:
 
-    log.info(f'[start_collect func]----- Spot {target_interval} Update -----')
-    pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20231101')
-    pus.update_price_data()
+        log.info(f'----- Spot {interval} Update -----')
+        pus = PriceUpdater(interval=interval, symbols=spot_symbols, future=False, init_start_date='20231101')
+        pus.update_price_data()
+        print()
 
-    log.info(f'[start_collect func]----- Future {target_interval} Update -----')
-    pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20231101')
-    pus.update_price_data()
+        log.info(f'----- Future {interval} Update -----')
+        puf = PriceUpdater(interval=interval, symbols=future_symbols, future=True, init_start_date='20231101')
+        puf.update_price_data()
+        print()
 
 
 if __name__ == '__main__':
@@ -226,14 +221,4 @@ if __name__ == '__main__':
     target_spot_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT']
     target_future_symbols = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT']
 
-    for interval in target_intervals:
-
-        log.info(f'----- Spot {interval} Update -----')
-        pus = PriceUpdater(interval=interval, symbols=target_spot_symbols, future=False, init_start_date='20231101')
-        pus.update_price_data()
-        print()
-
-        log.info(f'----- Future {interval} Update -----')
-        puf = PriceUpdater(interval=interval, symbols=target_future_symbols, future=True, init_start_date='20231101')
-        puf.update_price_data()
-        print()
+    start_collect(target_intervals, target_spot_symbols, target_future_symbols)

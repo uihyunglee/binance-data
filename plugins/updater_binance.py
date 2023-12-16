@@ -182,25 +182,22 @@ class PriceUpdater:
 
 
 ### Dags 연계를 위한 실행 함수 추가 ###
-
 def start_collect(intervals: List[str], spot_symbols: List[str], future_symbols: List[str]):
     """
     데이터 수집 시작 함수
 
-    이 함수는 주어진 구간에 따라 데이터 수집을 시작합니다.
-    구간은 list가 아닌 str로 넣으세요.
+    이 함수는 주어진 시간 간격과 symbol에 따라 데이터 수집을 시작합니다.
 
     Parameters:
-        interval (str): 수집을 원하는 구간
-        spot_symbols (list): 현물가 기준 수집을 원하는 코인(티커) 리스트
-        future_symbols (list): 선물가 기준 수집을 원하는 코인(티커) 리스트
+        intervals (List[str]): 수집을 원하는 시간 간격
+        spot_symbols (List[str]): 현물 기준 수집을 원하는 코인(symbol) 리스트
+        future_symbols (List[str]): 선물 기준 수집을 원하는 코인(symbol) 리스트
 
     Returns:
         None
 
-    Example:
-        >>> start_collect('5m', ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'], ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'EGLDUSDT'])
-        >>> start_collect('1h', ['BTCUSDT'],['BTCUSDT'])
+    Examples:
+        >>> start_collect(['5m', '15m', '1h'], ['BTCUSDT', 'ETHUSDT', 'XRPUSDT'], ['BTCUSDT', 'ETHUSDT'])
     """
     for interval in intervals:
 

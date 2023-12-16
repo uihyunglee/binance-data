@@ -10,10 +10,6 @@ import psycopg2
 from sl4p import *
 
 
-
-def test_please():
-    print('plz...')
-
 log_cfg = {
     "LOG": {
         "console_level": "INFO",

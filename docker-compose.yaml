@@ -86,6 +86,21 @@ x-airflow-common:
       condition: service_healthy
 
 services:
+  postgres_TOBE:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: developer
+      POSTGRES_PASSWORD: developer
+      POSTGRES_DB: developer
+      TZ: Asia/Seoul
+    volumes:
+      - postgres-TOBE-db-volume:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      network_new:
+        ipv4_address: 172.47.0.3
+
   postgres:
     image: postgres:13
     environment:
@@ -101,19 +116,10 @@ services:
       start_period: 5s
     restart: always
     ports:
-      - "5432:5432"
-  
-  pgadmin:
-    image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@naver.com
-      PGADMIN_DEFAULT_PASSWORD: postgres
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmindata:/var/lib/pgadmin
-    depends_on:
-      - postgres
+      - "5431:5432"
+    networks:
+      network_new:
+        ipv4_address: 172.47.0.4
 
   redis:
     image: redis:latest
@@ -126,6 +132,10 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+    networks:
+      network_new:
+        ipv4_address: 172.47.0.5
+
 
   airflow-webserver:
     <<: *airflow-common
@@ -143,6 +153,10 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      network_new:
+        ipv4_address: 172.47.0.6
+
 
   airflow-scheduler:
     <<: *airflow-common
@@ -158,6 +172,9 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      network_new:
+        ipv4_address: 172.47.0.7        
 
   airflow-worker:
     <<: *airflow-common
@@ -181,6 +198,9 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      network_new:
+        ipv4_address: 172.47.0.8        
 
   airflow-triggerer:
     <<: *airflow-common
@@ -196,6 +216,9 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      network_new:
+        ipv4_address: 172.47.0.9
 
   airflow-init:
     <<: *airflow-common
@@ -274,6 +297,9 @@ services:
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
+    networks:
+      network_new:
+        ipv4_address: 172.47.0.10
 
   airflow-cli:
     <<: *airflow-common
@@ -311,5 +337,16 @@ services:
         condition: service_completed_successfully
 
 volumes:
+  postgres-TOBE-db-volume:
   postgres-db-volume:
   pgadmindata:
+
+
+networks:
+  network_new:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.47.0.0/16
+          gateway: 172.47.0.1

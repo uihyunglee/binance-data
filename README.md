@@ -8,7 +8,8 @@ Create &amp; Update binance crypto currency data
 ## REQUIREMENTS
 
 - Docker
-- Python 3.11
+- Python 3.11.6
+- DBeaver (dbeaver.io 에 접속해서 별도 프로그램 설치 권장)
 
 ## INSTALLATION
 
@@ -20,20 +21,34 @@ Create &amp; Update binance crypto currency data
 2. 아래 명령어를 실행하여 컨테이너를 만들고 실행시킵니다.
 > docker-compose up
 
-3. https://localhost:8080으로 접속하여 airflow GUI에서 DAGs를 실행시킵니다.
+3. https://localhost:8080으로 접속하여 airflow web UI를 불러옵니다.
 
-4. 필요에 따라서 http://localhost:5050(pgAdmin 주소)에서 postgreDB를 관리하세요.
+4. WebUI의 Admin 탭 > Connections로 들어가서 DB 연결정보를 아래처럼 추가해줍니다.
 
-## 프로젝트 진척 상황 (hongcana)
+![Alt text](Connections.png)
 
-1. docker 초기 설정
+5. dags_collect_binance_data를 실행시키면 데이터 수집 및 DB 적재가 진행됩니다.
 
-- Dockerfile 생성 및 이미지 생성( image name : binance_data:1.0.0 )
-- docker-compose.yaml 구성 (postgre, redis, pgAdmin 포함)
-- postgreDB 연결을 위한 config.json 및 configDummy 구성
+6. 수집을 완료하면 DBeaver 등의 Client를 통하여 Postgres DB 내부 데이터를 직접 확인 가능합니다.
 
-2. airflow DAG 작성
+![Alt text](image.png)
 
-- airflow DAG 작성에 필요한 local python venv의 library 셋업
-- 로컬 환경 개발을 위한 .env 추가
-- dags_collect_binance_data_5m.py 개발 시작
+
+## 프로젝트 진행 상황 (hongcana)
+
+1. docker 설정
+
+- Dockerfile 생성 및 자체 이미지 생성( image name : binance_data:1.0.0 ) 
+- docker-compose.yaml custom network 구성 (Hook을 사용하기 위함)
+- docker-compose.yaml services 추가 구성 (network 등)
+
+2. airflow 설정
+
+- postgres 연결용 Connections 정보 추가
+- airflow DAG 작성에 필요한 로컬 파이썬 가상환경 library 셋업
+
+3. airflow DAG 작성
+
+- 로컬 환경 개발을 위한 .env 파일 추가
+- dags_collect_binance_data.py 개발
+- updater_binance.py에 postgres Hook을 이용한 코드 업데이트

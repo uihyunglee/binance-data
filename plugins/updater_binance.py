@@ -11,6 +11,12 @@ import psycopg2
 from binance.client import Client
 from sl4p import *
 
+# airflow용 import
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from contextlib import closing
+
+# airflow 부분 db연결 코드
+postgres_hook = PostgresHook('conn-db-postgres-TOBE')
 
 log_cfg = {
     "LOG": {
@@ -34,6 +40,8 @@ class PriceUpdater:
         self.interval = interval
         self.is_daily_form = True if VALID_INTERVALS.index(interval) >= DB_FORM_CHANGE_LEVEL else False
 
+        # local 부분 db연결 코드
+        '''
         config_path = os.path.join(os.getcwd(), "config.json")
         if os.path.exists(config_path):
             with open('config.json', 'r') as json_file:
@@ -49,6 +57,7 @@ class PriceUpdater:
                 raise ValueError("config.json must contain 'db' key.")
         else:
             raise FileNotFoundError("config.json must exist in the path. ")
+        '''
 
         self.client = Client("", "")
         self.symbols = symbols
@@ -63,8 +72,7 @@ class PriceUpdater:
         start_field = daily_start_field if self.is_daily_form else intraday_start_field
         primary_key = 'dateint, symbol' if self.is_daily_form else 'symbol, cddt'
 
-        with self.conn.cursor() as curs:
-            sql = f"""
+        create_sql = f"""
             CREATE TABLE IF NOT EXISTS {self.table_name} (
                 {start_field},
                 opentime BIGINT,
@@ -81,8 +89,18 @@ class PriceUpdater:
                 PRIMARY KEY ({primary_key}))
             ;
             """
-            curs.execute(sql)
-        self.conn.commit()
+        
+        # local 부분 cursor + SQL 실행 코드
+        #with self.conn.cursor() as curs:
+        #    curs.execute(create_sql)
+        #self.conn.commit()
+
+        # airflow 부분 SQL 실행 코드
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(create_sql)
+                conn.commit()
+
 
     def get_spot_symbols(self):
         spot_symbol_dict = self.client.get_all_tickers()
@@ -119,23 +137,45 @@ class PriceUpdater:
         return kline_df
 
     def get_start_time(self, symbol):
-        with self.conn.cursor() as curs:
-            sql = f"""
-            SELECT MAX(opentime) FROM {self.table_name}
-            WHERE symbol = '{symbol}'
-            ;
-            """
-            curs.execute(sql)
-            rs = curs.fetchone()
-            if rs[0] is not None:
-                start_time = rs[0] + 1000
-                start_time = pd.to_datetime(start_time, unit='ms') + td(hours=9)
-                start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
-                return start_time
-            else:
-                start_time = self.init_start_date
-                start_time = f'{start_time[:4]}-{start_time[4:6]}-{start_time[6:]} 00:00:00'
-                return start_time
+
+        # local 버전 cursor 코드
+        # with self.conn.cursor() as curs:
+        #     sql = f"""
+        #     SELECT MAX(opentime) FROM {self.table_name}
+        #     WHERE symbol = '{symbol}'
+        #     ;
+        #     """
+        #     curs.execute(sql)
+        #     rs = curs.fetchone()
+        #     if rs[0] is not None:
+        #         start_time = rs[0] + 1000
+        #         start_time = pd.to_datetime(start_time, unit='ms') + td(hours=9)
+        #         start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
+        #         return start_time
+        #     else:
+        #         start_time = self.init_start_date
+        #         start_time = f'{start_time[:4]}-{start_time[4:6]}-{start_time[6:]} 00:00:00'
+        #         return start_time
+            
+        # airflow 버전 cursor 코드
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                sql = f"""
+                SELECT MAX(opentime) FROM {self.table_name}
+                WHERE symbol = '{symbol}'
+                ;
+                """
+                cursor.execute(sql)
+                rs = cursor.fetchone()
+                if rs[0] is not None:
+                    start_time = rs[0] + 1000
+                    start_time = pd.to_datetime(start_time, unit='ms') + td(hours=9)
+                    start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
+                    return start_time
+                else:
+                    start_time = self.init_start_date
+                    start_time = f'{start_time[:4]}-{start_time[4:6]}-{start_time[6:]} 00:00:00'
+                    return start_time
 
     def update_price_data(self):
         symbol_cnt = len(self.symbols)
@@ -167,19 +207,36 @@ class PriceUpdater:
             kline_df['cddt'] = kline_df['cddt'].astype(str)
             kline_df = kline_df[col]
             print(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...', end='\r')
-            with self.conn.cursor() as curs:
-                t_now = dt.now()
-                for _, row in kline_df.iterrows():
-                    update_values = str(row.to_list())[1:-1] + f", '{t_now}'"
-                    sql = f"""
-                    INSERT INTO {self.table_name}
-                    VALUES ({update_values})
-                    ;
-                    """
-                    curs.execute(sql)
-                self.conn.commit()
+            
+            # local 부분 cursor 코드
+            # with self.conn.cursor() as curs:
+            #     t_now = dt.now()
+            #     for _, row in kline_df.iterrows():
+            #         update_values = str(row.to_list())[1:-1] + f", '{t_now}'"
+            #         sql = f"""
+            #         INSERT INTO {self.table_name}
+            #         VALUES ({update_values})
+            #         ;
+            #         """
+            #         curs.execute(sql)
+            #     self.conn.commit()
 
-                log.info(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...OK')
+            
+            # airflow 부분 cursor 코드
+            with closing(postgres_hook.get_conn()) as conn:
+                with closing(conn.cursor()) as cursor:
+                    t_now = dt.now()
+                    for _, row in kline_df.iterrows():
+                        update_values = str(row.to_list())[1:-1] + f", '{t_now}'"
+                        sql = f"""
+                        INSERT INTO {self.table_name}
+                        VALUES ({update_values})
+                        ;
+                        """
+                        cursor.execute(sql)
+                    conn.commit()    
+
+            log.info(f'[ {cnt} / {symbol_cnt} ] {symbol} {self.interval} Price Info DB Update...OK')
 
 
 # Dags 연계를 위한 실행 함수 추가
